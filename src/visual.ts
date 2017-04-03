@@ -1132,7 +1132,8 @@ module powerbi.extensibility.visual {
                 'cd6': this.model.settings.legend.show,
                 'cd7': this.model.maps.length, 
                 'cd8': (this.model.maps.length > 0 ? (!this.model.maps[0].mapMeasure ? false : true) : false),
-                'cd9': this.model.settings.dataLabels.position
+                'cd9': this.model.settings.dataLabels.position,
+                'cd15': this.meta.dev
             }); 
 
            //Color Blind module

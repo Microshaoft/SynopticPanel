@@ -15192,7 +15192,11 @@ var powerbi;
                         element.selectAll('#visionFilter').remove();
                         element.append('svg')
                             .attr('id', 'visionFilter')
-                            .style('position', 'absolute')
+                            .style({
+                            'position': 'absolute',
+                            'width': 0,
+                            'height': 0
+                        })
                             .html(visionDefs);
                         element.style({
                             'filter': 'url(#vision' + vision + ')',
@@ -17769,7 +17773,8 @@ var powerbi;
                             'cd6': this.model.settings.legend.show,
                             'cd7': this.model.maps.length,
                             'cd8': (this.model.maps.length > 0 ? (!this.model.maps[0].mapMeasure ? false : true) : false),
-                            'cd9': this.model.settings.dataLabels.position
+                            'cd9': this.model.settings.dataLabels.position,
+                            'cd15': this.meta.dev
                         });
                         //Color Blind module
                         PBI_CV_815282F9_27F5_4950_9430_E910E0A8DB6A.OKVizUtility.applyColorBlindVision(this.model.settings.colorBlind.vision, this.element);
