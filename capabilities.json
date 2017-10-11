@@ -51,7 +51,12 @@
                      "select": [
                         { "for" : { "in": "Category" } },
                         { "for": { "in": "MapSeries" } }
-                    ]
+                    ],
+                    "dataReductionAlgorithm": {
+                        "top": { 
+                            "count": 1000000 
+                        } 
+                    }
                 },
                 "values": {
                      "group": {
@@ -63,6 +68,11 @@
                             { "bind": { "to": "states" } },
                             { "bind": { "to": "tooltips" } }
                         ]
+                    },
+                    "dataReductionAlgorithm": {
+                        "top": { 
+                            "count": 1000000 
+                        } 
                     }
                 }
             }
@@ -74,12 +84,6 @@
             "properties": {
                  "showUnmatched": {
                     "displayName": "Unmatched areas",
-                    "type": {
-                        "bool": true 
-                    }
-                },
-                "showDiagnostic": {
-                    "displayName": "Diagnostic console log",
                     "type": {
                         "bool": true 
                     }
@@ -110,41 +114,6 @@
                     "type": {
                         "bool": true
                     }
-                },
-                 "scale": {
-                   "displayName": "Scale",
-                   "type": {
-                         "enumeration": [
-                             {
-                                "displayName": "50%",
-                                "value": "0.5"
-                            },
-                            {
-                                "displayName": "75%",
-                                "value": "0.75"
-                            },
-                            {
-                                "displayName": "100%",
-                                "value": "1"
-                            },
-                            {
-                                "displayName": "125%",
-                                "value": "1.25"
-                            },
-                            {
-                                "displayName": "150%",
-                                "value": "1.5"
-                            },
-                            {
-                                "displayName": "175%",
-                                "value": "1.75"
-                            },
-                            {
-                                "displayName": "200%",
-                                "value": "2"
-                            }
-                         ]
-                     }
                 },
                  "filter": {
                     "displayName": "Filter on map change",
@@ -210,7 +179,25 @@
                             }
                         }
                    }
-               }
+               },
+                "saturate": {
+                    "displayName": "Saturate",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                 "saturateMin": {
+                    "displayName": "Min saturation",
+                    "type": {
+                        "integer": true
+                    }
+                },
+                 "saturateMax": {
+                    "displayName": "Max saturation",
+                    "type": {
+                        "integer": true
+                    }
+                }
             }
         },
          "states": {
@@ -290,26 +277,7 @@
                    }
                 },
 
-               "saturate": {
-                    "displayName": "Saturate",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                 "saturateMin": {
-                    "displayName": "Min % saturation",
-                    "placeHolderText": "Auto",
-                    "type": {
-                        "numeric": true
-                    }
-                },
-                 "saturateMax": {
-                    "displayName": "Max % saturation",
-                    "placeHolderText": "Auto",
-                    "type": {
-                        "numeric": true
-                    }
-                },
+               
                 
                 "manualState1Fill": {
                    "displayName": "State A",
@@ -481,6 +449,13 @@
                         "bool": true
                     }
                 },
+                "locale": {
+                    "displayName": "Culture code",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "text": true
+                    }
+                },
                 "fontSize": {
                    "displayName": "Text size",
                    "type": {
@@ -488,6 +463,109 @@
                             "fontSize": true
                         }
                    }
+                },
+                "fontFamily": {
+                    "displayName": "Font family",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Arial",
+                                "value": "Arial"
+                            },
+                            {
+                                "displayName": "Arial Black",
+                                "value": "\"Arial Black\""
+                            },
+                            {
+                                "displayName": "Arial Unicode MS",
+                                "value": "\"Arial Unicode MS\""
+                            },
+                            {
+                                "displayName": "Calibri",
+                                "value": "Calibri"
+                            },
+                            {
+                                "displayName": "Cambria",
+                                "value": "Cambria"
+                            },
+                            {
+                                "displayName": "Cambria Math",
+                                "value": "\"Cambria Math\""
+                            },
+                            {
+                                "displayName": "Candara",
+                                "value": "Candara"
+                            },
+                            {
+                                "displayName": "Comic Sans MS",
+                                "value": "\"Comic Sans MS\""
+                            },
+                            {
+                                "displayName": "Consolas",
+                                "value": "Consolas"
+                            },
+                            {
+                                "displayName": "Constantia",
+                                "value": "Constantia"
+                            },
+                            {
+                                "displayName": "Corbel",
+                                "value": "Corbel"
+                            },
+                            {
+                                "displayName": "Courier New",
+                                "value": "\"Courier New\""
+                            },
+                            {
+                                "displayName": "Georgia",
+                                "value": "Georgia"
+                            },
+                            {
+                                "displayName": "Lucida Sans Unicode",
+                                "value": "\"Lucida Sans Unicode\""
+                            },
+                            {
+                                "displayName": "Segoe (Bold)",
+                                "value": "\"Segoe UI Bold\", wf_segoe-ui_bold, helvetica, arial, sans-serif"
+                            },
+                            {
+                                "displayName": "Segoe UI",
+                                "value": "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif"
+                            },
+                            {
+                                "displayName": "Segoe UI Light",
+                                "value": "\"Segoe UI Light\", wf_segoe-ui_bold, helvetica, arial, sans-serif"
+                            },
+                            {
+                                "displayName": "Symbol",
+                                "value": "Symbol"
+                            },
+                            {
+                                "displayName": "Tahoma",
+                                "value": "Tahoma"
+                            },
+                            {
+                                "displayName": "Times New Roman",
+                                "value": "\"Times New Roman\""
+                            },
+                            {
+                                "displayName": "Trebuchet MS",
+                                "value": "\"Trebuchet MS\""
+                            },
+                            {
+                                "displayName": "Verdana",
+                                "value": "Verdana"
+                            },
+                            {
+                                "displayName": "Wingdings",
+                                "value": "Wingdings"
+                            },
+                            {
+                                "displayName": "wf_standard-font",
+                                "value": "wf_standard-font,helvetica,arial,sans-serif"
+                            }
+                        ]
+                    }
                 },
                 "unit": {
                    "displayName": "Display unit",
@@ -503,7 +581,13 @@
                    "type": {
                        "numeric": true
                    }
-                }
+                },
+                "zoomEnlarge": {
+                    "displayName": "Enlarge on zoom",
+                    "type": {
+                        "bool": true 
+                    }
+                 }
             }
         },
         "legend": {
@@ -639,7 +723,18 @@
                 }
             }
         },
-         "t": { "properties": { "u": { "type": { "text": true } } } }
+        "about": {
+            "displayName": "About",
+            "properties": {
+                "version": {
+                    "displayName": "Version",
+                    "type": {
+                        "text": true
+                    }
+                }
+            }
+        },
+        "t": { "properties": { "u": { "type": { "text": true } }, "lk": { "type": { "text": true }}  } }
     },    
     "supportsHighlight": true
 }

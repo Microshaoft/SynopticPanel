@@ -4,12 +4,12 @@
     "displayName": "Synoptic Panel by OKViz",
     "guid": "PBI_CV_815282F9_27F5_4950_9430_E910E0A8DB6A",
     "visualClassName": "Visual",
-    "version": "1.4.5",
+    "version": "1.4.6",
     "description": "Synoptic Panel by OKViz allows you to present one or more images (called maps, not necessarily geographical maps), assigning a meaning to arbitrary parts of them (called areas). You can highlight and color these areas dynamically and display several information over them. To design maps you can use a vector graphic editor or Synoptic Designer, a companion web tool located at https://synoptic.design/",
     "supportUrl": "http://okviz.com/synoptic-panel/",
     "gitHubUrl": "https://github.com/okviz/synopticpanel"
   },
-  "apiVersion": "1.5.0",
+  "apiVersion": "1.7.0",
   "author": {
     "name": "OKViz - a trademark of SQLBI",
     "email": "support@okviz.com"
@@ -20,9 +20,8 @@
   "externalJS": [
     "node_modules/jquery/dist/jquery.min.js",
     "node_modules/d3/d3.min.js",
-    "node_modules/lodash/lodash.min.js",
     "node_modules/globalize/lib/globalize.js",
-    "node_modules/globalize/lib/cultures/globalize.culture.en-US.js",
+    "node_modules/globalize/lib/cultures/globalize.cultures.js",
     "node_modules/powerbi-visuals-utils-typeutils/lib/index.js",
     "node_modules/powerbi-visuals-utils-svgutils/lib/index.js",
     "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.js",

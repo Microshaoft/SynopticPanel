@@ -61,7 +61,7 @@ module powerbi.extensibility.visual {
         resetToolbar?: boolean;
     }
     
-    interface VisualDataPoint {
+    interface VisualDataPoint extends SelectableDataPoint {
         category?: string;
         group?: string;
         displayName?: string;
@@ -72,11 +72,9 @@ module powerbi.extensibility.visual {
         target?: number;
         color?: string;
         format?: string;
-        selectionId?: any;
         tooltips?: VisualTooltipDataItem[];
 
         highlight?:boolean;
-        selected?:boolean;
     }
 
     interface VisualMap {
@@ -86,7 +84,7 @@ module powerbi.extensibility.visual {
         areas: VisualArea[];
         scale: VisualMapScale;
         mapMeasure: string;
-        selectionIds?: any[];
+        identities?: any[];
     }
 
     interface VisualMapScale {
@@ -126,14 +124,14 @@ module powerbi.extensibility.visual {
         displayName?: string;
         isTarget: boolean;
         sourcePosition: number;
-        selectionId: any;
-        dataPointSelectionId?:any;
+        identity: any;
+        dataPointIdentity?:any;
     }
 
     interface VisualEnumerationDataPoint {
         displayName: string;     
         color?: string;
-        selectionId: any;
+        identity: any;
     }
 
     interface VisualDomain {
@@ -146,14 +144,12 @@ module powerbi.extensibility.visual {
     interface VisualSettings {
         general: {
             showUnmatched: boolean;
-            showDiagnostic: boolean;
             strictValidation: boolean;
             imageSelected: number;
             imageData?: string;
         },
         toolbar: {
             keep: boolean;
-            scale: string;
             filter: boolean;
             zoom: boolean;
         },
@@ -163,15 +159,15 @@ module powerbi.extensibility.visual {
             defaultFill: Fill;
             showAll: boolean;
             colorByCategory?: boolean;
+            saturate: boolean;
+            saturateMin: number;
+            saturateMax: number;
         };
         states: {
             show: boolean;
             calculate: string;
             comparison: string;
             fontSize: number;
-            saturate: boolean;
-            saturateMin?: number;
-            saturateMax?: number;
             manualState1?: number;
             manualState1Fill?: Fill;
             manualState2?: number;
@@ -190,9 +186,12 @@ module powerbi.extensibility.visual {
             position: string;
             enclose: boolean;
             wordWrap: boolean;
+            fontFamily: string;
             fontSize: number;
             unit?: number; 
             precision?: number; 
+            locale?: string;
+            zoomEnlarge: boolean;
         };
         legend: {
             show: boolean;
@@ -213,13 +212,11 @@ module powerbi.extensibility.visual {
         return {
             general: {
                 showUnmatched: true,
-                showDiagnostic: false,
                 strictValidation: false,
                 imageSelected: 0
             },
             toolbar: {
                 keep: false,
-                scale: "1",
                 filter: false,
                 zoom: true
             },
@@ -227,14 +224,16 @@ module powerbi.extensibility.visual {
                 borders: true,
                 defaultFill: { solid: { color: "#01B8AA" } },
                 showAll: false,
-                colorByCategory: true
+                colorByCategory: true,
+                saturate: false,
+                saturateMin: 0,
+                saturateMax: 100
             },
             states: {
                 show: true,
                 comparison: '>',
                 calculate: 'absolute',
-                fontSize: 10,
-                saturate: false
+                fontSize: 10
             },
             dataLabels: {
                show: false,
@@ -244,7 +243,10 @@ module powerbi.extensibility.visual {
                enclose: true,
                wordWrap: true,
                fontSize: 9,
-               unit: 0
+               fontFamily:  'wf_standard-font,helvetica,arial,sans-serif',
+               unit: 0,
+               locale: '',
+               zoomEnlarge: true
            },
            legend: {
                 show: false,
@@ -275,14 +277,12 @@ module powerbi.extensibility.visual {
             settings = {
                  general: {
                     showUnmatched: getValue<boolean>(objects, "general", "showUnmatched", settings.general.showUnmatched),
-                    showDiagnostic: getValue<boolean>(objects, "general", "showDiagnostic", settings.general.showDiagnostic),
                     strictValidation: getValue<boolean>(objects, "general", "strictValidation", settings.general.strictValidation),
                     imageSelected: getValue<number>(objects, "general", "imageSelected", settings.general.imageSelected),
                     imageData: getValue<string>(objects, "general", "imageData", settings.general.imageData)
                 },
                 toolbar: {
                     keep: getValue<boolean>(objects, "toolbar", "keep", settings.toolbar.keep),
-                    scale: getValue<string>(objects, "toolbar", "scale", settings.toolbar.scale),
                     filter: getValue<boolean>(objects, "toolbar", "filter", settings.toolbar.filter),
                     zoom: getValue<boolean>(objects, "toolbar", "zoom", settings.toolbar.zoom)
                 },
@@ -291,7 +291,10 @@ module powerbi.extensibility.visual {
                     borders: getValue<boolean>(objects, "dataPoint", "borders", settings.dataPoint.borders),
                     defaultFill: getValue<Fill>(objects, "dataPoint", "defaultFill", settings.dataPoint.defaultFill),
                     showAll: getValue<boolean>(objects, "dataPoint", "showAll", settings.dataPoint.showAll),
-                    colorByCategory: getValue<boolean>(objects, "dataPoint", "colorByCategory", settings.dataPoint.colorByCategory)
+                    colorByCategory: getValue<boolean>(objects, "dataPoint", "colorByCategory", settings.dataPoint.colorByCategory),
+                    saturate: getValue<boolean>(objects, "dataPoint", "saturate", settings.dataPoint.saturate),
+                    saturateMin: getValue<number>(objects, "dataPoint", "saturateMin", settings.dataPoint.saturateMin),
+                    saturateMax: getValue<number>(objects, "dataPoint", "saturateMax", settings.dataPoint.saturateMax),
                 },
                 dataLabels: {
                     show: getValue<boolean>(objects, "dataLabels", "show", settings.dataLabels.show),
@@ -301,17 +304,17 @@ module powerbi.extensibility.visual {
                     enclose: getValue<boolean>(objects, "dataLabels", "enclose", settings.dataLabels.enclose),
                     wordWrap: getValue<boolean>(objects, "dataLabels", "wordWrap", settings.dataLabels.wordWrap),
                     fontSize: getValue<number>(objects, "dataLabels", "fontSize", settings.dataLabels.fontSize),
+                    fontFamily: getValue<string>(objects, "dataLabels", "fontFamily", settings.dataLabels.fontFamily),
                     unit: getValue<number>(objects, "dataLabels", "unit", settings.dataLabels.unit),
-                    precision: getValue<number>(objects, "dataLabels", "precision", settings.dataLabels.precision)
+                    precision: getValue<number>(objects, "dataLabels", "precision", settings.dataLabels.precision),
+                    locale: getValue<string>(objects, "dataLabels", "locale", settings.dataLabels.locale),
+                    zoomEnlarge: getValue<boolean>(objects, "dataLabels", "zoomEnlarge", settings.dataLabels.zoomEnlarge)
                 },
                 states: {
                     show: getValue<boolean>(objects, "states", "show", settings.states.show),
                     calculate: getValue<string>(objects, "states", "calculate", settings.states.calculate),
                     comparison: getValue<string>(objects, "states", "comparison", settings.states.comparison),
                     fontSize: getValue<number>(objects, "states", "fontSize", settings.states.fontSize),
-                    saturate: getValue<boolean>(objects, "states", "saturate", settings.states.saturate),
-                    saturateMin: getValue<number>(objects, "states", "saturateMin", settings.states.saturateMin),
-                    saturateMax: getValue<number>(objects, "states", "saturateMax", settings.states.saturateMax),
                     manualState1: getValue<number>(objects, "states", "manualState1", settings.states.manualState1),
                     manualState1Fill: getValue<Fill>(objects, "states", "manualState1Fill", settings.states.manualState1Fill),
                     manualState2: getValue<number>(objects, "states", "manualState2", settings.states.manualState2),
@@ -337,15 +340,9 @@ module powerbi.extensibility.visual {
                 }
             }
 
-            //Limit some properties
-            
-            if (settings.dataLabels.precision < 0) settings.dataLabels.precision = 0;
-            if (settings.dataLabels.precision > 5) settings.dataLabels.precision = 5;
-            if (settings.states.saturateMin > settings.states.saturateMax) {
-                let tmp = settings.states.saturateMin;
-                settings.states.saturateMin = settings.states.saturateMax;
-                settings.states.saturateMax = tmp;
-            }
+            //Adjust some properties
+            if (settings.dataLabels.locale == '') settings.dataLabels.locale = host.locale;
+            settings.dataPoint.saturateMax = Math.max(settings.dataPoint.saturateMin + 1, settings.dataPoint.saturateMax);
         }
 
         //Get DataPoints
@@ -415,10 +412,10 @@ module powerbi.extensibility.visual {
                                         areas: [],
                                         scale: { scale: 1, translation: [0, 0] },
                                         mapMeasure: mapMeasure,
-                                        selectionIds: [identity]
+                                        identities: [identity]
                                     });
                                 } else {
-                                    maps[existingMapIndex].selectionIds.push(identity);
+                                    maps[existingMapIndex].identities.push(identity);
                                 }
                             }
                         }
@@ -448,9 +445,6 @@ module powerbi.extensibility.visual {
 
                      } catch (e) { 
 
-                        if (settings.general.showDiagnostic)
-                            console.log('%c' + e, 'color:red');
-
                         //Image data is an URL or file content - the old way
                         let isURL = OKVizUtility.isValidURL(settings.general.imageData);
                         maps = [{
@@ -460,7 +454,7 @@ module powerbi.extensibility.visual {
                             areas: [],
                             scale: { scale: 1, translation: [0, 0] },
                             mapMeasure: null,
-                            selectionIds: null
+                            identities: null
                         }];
                     };
                 }
@@ -509,6 +503,8 @@ module powerbi.extensibility.visual {
                     let dataPoint: VisualDataPoint = {
                         category: OKVizUtility.makeMeasureReadable(categoryValue),
                         group: OKVizUtility.makeMeasureReadable(groupName),
+                        selected: false,
+                        identity: null,
                         tooltips: []
                     };
 
@@ -534,6 +530,7 @@ module powerbi.extensibility.visual {
 
 
                         let value: any = dataValue.values[c];
+                        let highlightValue: any = value;
                         let addRegularTooltip = false;
 
                         if (value !== null) {
@@ -550,6 +547,7 @@ module powerbi.extensibility.visual {
                                 if (dataValue.highlights) {
                                     dataPoint.highlight = true;
                                     dataPoint.highlightValue = <any>dataValue.highlights[c];
+                                    highlightValue = dataPoint.highlightValue;
                                     hasHighlights = true;
                                 }
                                 dataPoint.format = dataValue.source.format;
@@ -558,15 +556,15 @@ module powerbi.extensibility.visual {
                                     arePercentages = true;
 
                                 if (groupName) {
-                                    dataPoint.selectionId = host.createSelectionIdBuilder().withSeries(dataCategorical.values, group).createSelectionId();
+                                    dataPoint.identity = host.createSelectionIdBuilder().withSeries(dataCategorical.values, group).createSelectionId();
                                     dataPoint.displayName = (useGroupNameAsDisplayName ? dataPoint.group : (category ? dataPoint.category : dataValue.source.displayName));
 
                                 } else if (category) {
-                                    dataPoint.selectionId = host.createSelectionIdBuilder().withCategory(category, c).createSelectionId();
+                                    dataPoint.identity = host.createSelectionIdBuilder().withCategory(category, c).createSelectionId();
                                     dataPoint.displayName = dataPoint.category;
 
                                 } else {
-                                    dataPoint.selectionId = host.createSelectionIdBuilder().withMeasure(dataValue.source.queryName).createSelectionId();
+                                    dataPoint.identity = host.createSelectionIdBuilder().withMeasure(dataValue.source.queryName).createSelectionId();
                                     dataPoint.displayName = dataValue.source.displayName;
                                 }
 
@@ -619,7 +617,7 @@ module powerbi.extensibility.visual {
                                     enumerationDataPoints.push(<VisualEnumerationDataPoint>{
                                         displayName: enumerateName,
                                         color: color,
-                                        selectionId: enumerateIdentity
+                                        identity: enumerateIdentity
                                     });
 
                                     legendDataPoints.push({
@@ -644,6 +642,7 @@ module powerbi.extensibility.visual {
                                         value: dataPoint.group
                                     });
                                 }
+
                                 addRegularTooltip = true;
                             }
                             
@@ -654,6 +653,7 @@ module powerbi.extensibility.visual {
                                 dataPoint.stateValue = value;
                                 if (dataValue.highlights) {
                                     dataPoint.highlightStateValue = <any>dataValue.highlights[c];
+                                    highlightValue = dataPoint.highlightStateValue;
                                 }
 
                                 addRegularTooltip = true;
@@ -687,8 +687,8 @@ module powerbi.extensibility.visual {
                                         displayName: dataValue.source.displayName,
                                         isTarget: isTarget,
                                         sourcePosition: states.length,
-                                        selectionId: host.createSelectionIdBuilder().withMeasure(dataValue.source.queryName).createSelectionId(),
-                                        dataPointSelectionId: dataPoint.selectionId
+                                        identity: host.createSelectionIdBuilder().withMeasure(dataValue.source.queryName).createSelectionId(),
+                                        dataPointIdentity: dataPoint.identity
                                     });
                                 //}
 
@@ -701,10 +701,14 @@ module powerbi.extensibility.visual {
 
                             if (addRegularTooltip) {
 
-                                let formattedValue = OKVizUtility.Formatter.format(value, {
+                                let formattedValue = OKVizUtility.Formatter.format((hasHighlights ? highlightValue : value), {
                                     format: dataValue.source.format,
-                                    formatSingleValues: true,
-                                    allowFormatBeautification: false
+                                    value: settings.dataLabels.unit,
+                                    precision: settings.dataLabels.precision,
+                                    formatSingleValues: false,
+                                    displayUnitSystemType: 1,
+                                    allowFormatBeautification: false,
+                                    cultureSelector: settings.dataLabels.locale
                                 });
 
                                 dataPoint.tooltips.push(<VisualTooltipDataItem>{
@@ -786,7 +790,8 @@ module powerbi.extensibility.visual {
 
                             dataPoints.push(<VisualDataPoint>{
                                 category: displayName,
-                                selectionId: identity,
+                                identity: identity,
+                                selected: false,
                                 displayName: displayName,
                                 color: color,
                                 tooltips: [<VisualTooltipDataItem>{
@@ -798,7 +803,7 @@ module powerbi.extensibility.visual {
                             enumerationDataPoints.push(<VisualEnumerationDataPoint>{
                                 displayName: displayName,
                                 color: color,
-                                selectionId: identity
+                                identity: identity
                             });
                         }
                     }
@@ -823,7 +828,8 @@ module powerbi.extensibility.visual {
 
                             dataPoints.push(<VisualDataPoint>{
                                 group: displayName,
-                                selectionId: identity,
+                                identity: identity,
+                                selected: false,
                                 displayName: displayName,
                                 color: color,
                                 tooltips: [<VisualTooltipDataItem>{
@@ -836,7 +842,7 @@ module powerbi.extensibility.visual {
                                 enumerationDataPoints.push(<VisualEnumerationDataPoint>{
                                     displayName: displayName,
                                     color: color,
-                                    selectionId: identity
+                                    identity: identity
                                 });
                             }
 
@@ -887,8 +893,8 @@ module powerbi.extensibility.visual {
                         displayName: null,
                         isTarget: false,
                         sourcePosition: s,
-                        selectionId: null,
-                        dataPointSelectionId: null
+                        identity: null,
+                        dataPointIdentity: null
                     });
                 }
             }
@@ -955,7 +961,7 @@ module powerbi.extensibility.visual {
     export class Visual implements IVisual {
         private meta: VisualMeta;
         private host: IVisualHost;
-        private viewPort: IViewport;
+        private viewPort: ScaledViewport;
         private editMode: boolean;
         private selectionManager: ISelectionManager;
         private selectionIdBuilder: ISelectionIdBuilder;
@@ -964,6 +970,7 @@ module powerbi.extensibility.visual {
         private behavior: VisualBehavior;
         private legend: ILegend;
         private model: VisualViewModel;
+        private licced: boolean;
         private element: d3.Selection<HTMLElement>;
         private container: d3.Selection<HTMLElement>;
         private containerSize: SVGRect;
@@ -983,10 +990,9 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Synoptic Panel',
-                version: '1.4.5',
+                version: '1.4.6',
                 dev: false
             };
-            console.log('%c' + this.meta.name + ' by OKViz ' + this.meta.version + (this.meta.dev ? ' (BETA)' : ''), 'font-weight:bold');
 
             JSZip = (<any>window).JSZip; 
   
@@ -998,20 +1004,21 @@ module powerbi.extensibility.visual {
             this.gallery = { folders:[], items: [], retreiving: false, visible: false};
 
             this.interactivityService = InteractivityModule.createInteractivityService(options.host);
-            this.behavior = new VisualBehavior();
+            this.behavior = new VisualBehavior(); 
 
             this.element = d3.select(options.element);
             this.editMode = true;
-            this.legend = LegendModule.createLegend($(options.element), false, this.interactivityService, true, LegendPosition.Top);
+            this.legend = LegendModule.createLegend(options.element, false, this.interactivityService, true, LegendPosition.Top);
+            
         }
-         
+
+        //@logErrors() //TODO Don't use in production
         public update(options: VisualUpdateOptions) {
- 
+
             let selectionManager  = this.selectionManager;
-            this.viewPort = options.viewport;
+            this.viewPort = <any>options.viewport;
 
             let dataChanged = (options.type == VisualUpdateType.Data || options.type == VisualUpdateType.All || d3.select('.chart').empty());
-
 
             if (dataChanged) {
     
@@ -1033,6 +1040,10 @@ module powerbi.extensibility.visual {
             }
             if (this.model.dataPoints.length == 0) return; 
 
+            if (this.model.hasHighlights && this.interactivityService.hasSelection())
+                this.interactivityService.clearSelection();
+            this.interactivityService.applySelectionStateToData(this.model.dataPoints);
+
             let redrawToolbar = false;
             if (this.editMode != (options.viewMode == ViewMode.Edit) || this.model.postUpdateActions.resetToolbar) redrawToolbar = true;
             this.editMode = (options.viewMode == ViewMode.Edit);
@@ -1042,8 +1053,9 @@ module powerbi.extensibility.visual {
 
             //Legend
             if (this.legend) {
+
                 if (this.model.settings.legend.show && this.model.legendDataPoints.length > 0 && this.model.maps.length > 0) {
-            
+    
                     this.legend.changeOrientation(<any>LegendPosition[this.model.settings.legend.position]);
                     this.legend.drawLegend(<LegendData>{
                         title: this.model.settings.legend.titleText,
@@ -1052,7 +1064,8 @@ module powerbi.extensibility.visual {
                         fontSize: this.model.settings.legend.fontSize
                     }, options.viewport);
 
-                    appendLegendMargins(this.legend, margin);
+
+                   appendLegendMargins(this.legend, margin);
     
                 } else {
 
@@ -1105,11 +1118,11 @@ module powerbi.extensibility.visual {
                 this.parseSVG(map);
 
                 if (this.model.maps.length > 1 && this.model.settings.toolbar.filter) {
-                    if (map.selectionIds && map.selectionIds.length > 0) {
+                    if (map.identities && map.identities.length > 0) {
        
                         selectionManager.clear();
-                        for (let i = 0; i < map.selectionIds.length; i++)
-                            selectionManager.select(map.selectionIds[i], true);
+                        for (let i = 0; i < map.identities.length; i++)
+                            selectionManager.select(map.identities[i], true);
                     }
                 }
             }
@@ -1120,14 +1133,14 @@ module powerbi.extensibility.visual {
                     .classed('welcome', true)
                     .append('div')
                     .classed('body', true)
-                    .html('Design your maps with <strong>https://synoptic.design</strong>');
+                    .text('Design your maps with https://synoptic.design');
             }
     
             OKVizUtility.t([this.meta.name, this.meta.version], this.element, options, this.host, {
                 'cd1': this.model.settings.colorBlind.vision, 
                 'cd2': (this.model.settings.states.show ?  this.model.states.length : 0), 
                 'cd3': this.model.settings.states.comparison, 
-                'cd4': this.model.settings.states.saturate, 
+                'cd4': this.model.settings.dataPoint.saturate, 
                 'cd5': this.model.hasStates, 
                 'cd6': this.model.settings.legend.show,
                 'cd7': this.model.maps.length, 
@@ -1135,6 +1148,11 @@ module powerbi.extensibility.visual {
                 'cd9': this.model.settings.dataLabels.position,
                 'cd15': this.meta.dev
             }); 
+
+            if (!this.licced) {
+                this.licced = true;
+                OKVizUtility.lic_log(this.meta, options, this.host);
+            }
 
            //Color Blind module
             OKVizUtility.applyColorBlindVision(this.model.settings.colorBlind.vision, this.element);
@@ -1175,12 +1193,12 @@ module powerbi.extensibility.visual {
 
                         }, 'text').fail(function () {
                            
-                            OKVizUtility.severeAlert(self.element, "Remote Map Error", "The provided image cannot be displayed for one of the following reasons:<br><br>&bull;You are <strong>offline</strong>.<br>&bull; The remote URL is <strong>not publicly accessible</strong>.<br>&bull; The remote URL has not the <strong>HTTPS</strong> protocol.<br>&bull; The remote server disallows <strong>Cross-Origin Resource Sharing</strong> (CORS).", alertHeight, alertTop);
+                            self.severeAlert("Remote Map Error", "The provided image cannot be displayed for one of the following reasons: you are offline, the remote URL is not accessible, the remote URL has not the HTTPS protocol, the remote server disallows Cross-Origin Resource Sharing (CORS).", alertHeight, alertTop);
  
                         });
                     } else {
 
-                        OKVizUtility.severeAlert(this.element, "Remote Map Error", "The provided image is <strong>not an SVG file</strong>.", alertHeight, alertTop);
+                        this.severeAlert("Remote Map Error", "The provided image is not an SVG file.", alertHeight, alertTop);
                     }
 
                 }
@@ -1199,10 +1217,8 @@ module powerbi.extensibility.visual {
                         
                         //Unzip
                         new JSZip().loadAsync(decodedData).catch(function(e){ 
-                            if (this.model.settings.general.showDiagnostic)
-                                console.log('%c' + e, 'color:red');
 
-                            OKVizUtility.severeAlert(self.element, "ZIP File Error", "The provided ZIP file is <strong>not a valid archive</strong> or uses an <strong>unsupported compression</strong>. Try to re-compress it with the default Windows compression utility.", alertHeight, alertTop);
+                            self.severeAlert("ZIP File Error", "The provided ZIP file is not a valid archive or uses an unsupported compression. Try to re-compress it with the default Windows compression utility.", alertHeight, alertTop);
 
                         }).then(function(zip){
                             if (zip) {
@@ -1212,10 +1228,8 @@ module powerbi.extensibility.visual {
                                         if (file.indexOf('.svg') > -1) {
 
                                             zip.file(file).async('string').catch(function(e){
-                                                if (this.model.settings.general.showDiagnostic)
-                                                    console.log('%c' + e, 'color:red');
 
-                                                OKVizUtility.severeAlert(self.element, "ZIP File Error", "The provided ZIP file does <strong>not contain a valid SVG file</strong>.", alertHeight, alertTop);
+                                                self.severeAlert("ZIP File Error", "The provided ZIP file does not contain a valid SVG file.", alertHeight, alertTop);
 
                                             }).then(function(content){
                                                 if (content) {
@@ -1231,7 +1245,7 @@ module powerbi.extensibility.visual {
                                 }
 
                                 if (!svgFound) {
-                                    OKVizUtility.severeAlert(self.element, "ZIP File Error", "The provided ZIP file does <strong>not contain a valid SVG file</strong>.", alertHeight, alertTop);
+                                    self.severeAlert("ZIP File Error", "The provided ZIP file does not contain a valid SVG file.", alertHeight, alertTop);
                                 }
                                 
                             }
@@ -1255,7 +1269,7 @@ module powerbi.extensibility.visual {
                 
                     let parserError = (svgElement.getElementsByTagName("parsererror").length > 0);
                     if (parserError) {
-                         OKVizUtility.severeAlert(this.element, "SVG File Error", "The provided image is <strong>not a valid SVG</strong> file.");
+                         this.severeAlert("SVG File Error", "The provided image is not a valid SVG file.");
                          return;
                     } else {
                         try {
@@ -1275,7 +1289,7 @@ module powerbi.extensibility.visual {
                 let $tempsvg = $temp.find('svg');
                 if ($tempsvg.length == 0) {
 
-                    OKVizUtility.severeAlert(this.element, "SVG File Error", "The provided image is <strong>not a valid SVG</strong> file.");
+                    this.severeAlert("SVG File Error", "The provided image is not a valid SVG file.");
 
                 } else {
 
@@ -1349,6 +1363,7 @@ module powerbi.extensibility.visual {
                         });
                      
                         var self = this;
+
                         let zoom = d3.behavior.zoom() 
                             .scaleExtent([1, 10])
                             .center([this.containerSize.width / 2, this.containerSize.height / 2])
@@ -1360,6 +1375,12 @@ module powerbi.extensibility.visual {
                                             self.zooming = true;
                                         }, 250);
                                     self.gContext.attr("transform", "translate(" + (<any>d3.event).translate + ") scale(" + (<any>d3.event).scale + ")");
+                                    
+                                    if (!self.model.settings.dataLabels.zoomEnlarge) {
+                                        let originalFontSize = PixelConverter.fromPointToPixel(self.model.settings.dataLabels.fontSize);
+                                        let newFontSize = (originalFontSize / (<any>d3.event).scale);
+                                        d3.selectAll('.label').style('font-size', newFontSize + 'px');
+                                    }
                                 }
                             })
                             .on("zoomend", function(){  
@@ -1405,12 +1426,6 @@ module powerbi.extensibility.visual {
             if (map.areas.length > 0 && this.svgMap) {
 
                 OKVizUtility.spinner(this.element);
-                  
-                if (this.model.settings.general.showDiagnostic) {
-                    console.log(map.displayName);
-                    console.log('%c' + map.data.replace(/[\n\r]/g, ''), 'color:blue');
- 
-                }
 
                 if (this.model.postUpdateActions.resetLabels)
                     this.element.selectAll('.label').remove();
@@ -1422,11 +1437,8 @@ module powerbi.extensibility.visual {
                     let area = map.areas[a];
                     let e = d3.select(area.selector);
                     let element = <any>e.node();
-                    if (!element) {
-                        if (this.model.settings.general.showDiagnostic)
-                            console.log('%cElement ' + area.selector + ' not found', 'color:red');
+                    if (!element)
                         continue;
-                    }
 
                     if (area.matchableParent) {
                         //Element is a child of matchABLE element, so remove its styles
@@ -1498,7 +1510,7 @@ module powerbi.extensibility.visual {
                                     for (let i = 0; i < this.model.states.length; i++){
 
                                         let state = this.model.states[i];
-                                        if (!state.dataPointSelectionId || dataPoint.selectionId == state.dataPointSelectionId) {
+                                        if (!state.dataPointIdentity || dataPoint.identity == state.dataPointIdentity) {
 
                                             let valueToCompare = stateValue;
                                             if (this.model.settings.states.calculate == 'modifier') {
@@ -1539,24 +1551,26 @@ module powerbi.extensibility.visual {
                                     } 
 
                                     //Saturation
-                                    if (this.model.settings.states.saturate) {
+                                    if (this.model.settings.dataPoint.saturate) {
 
                                         let saturation;
                                         if (target) {
 
-                                            let startSaturation = (this.model.settings.states.saturateMin ? this.model.settings.states.saturateMin : this.model.domain.startTargetVariance);
+                                            let startSaturation = (this.model.settings.dataPoint.saturateMin ? (this.model.settings.dataPoint.saturateMin / 100) : this.model.domain.startTargetVariance);
 
-                                            let endSaturation = (this.model.settings.states.saturateMax ? this.model.settings.states.saturateMax : this.model.domain.endTargetVariance);
+                                            let endSaturation = (this.model.settings.dataPoint.saturateMax ? (this.model.settings.dataPoint.saturateMax / 100) : this.model.domain.endTargetVariance);
 
                                              saturation = Math.min(1, Math.max(0, ((variance - startSaturation) / (endSaturation - startSaturation))));
 
                                         } else {
                                             
-                                            let startSaturation = (this.model.settings.states.saturateMin ? this.model.settings.states.saturateMin * this.model.domain.start : this.model.domain.start);
+                                            let startSaturation = (this.model.settings.dataPoint.saturateMin ? (this.model.settings.dataPoint.saturateMin / 100) * this.model.domain.start : this.model.domain.start);
 
-                                            let endSaturation = (this.model.settings.states.saturateMax ? this.model.settings.states.saturateMax * this.model.domain.end : this.model.domain.end);
-                                            
+                                            let endSaturation = (this.model.settings.dataPoint.saturateMax ? (this.model.settings.dataPoint.saturateMax / 100) * this.model.domain.end : this.model.domain.end);
+
                                             saturation = Math.min(1, Math.max(0, ((stateValue - startSaturation) / (endSaturation - startSaturation))));
+
+
                                         } 
 
                                         if (saturation !== undefined && color) {
@@ -1601,27 +1615,9 @@ module powerbi.extensibility.visual {
 
                                 }
 
-
-                                let opacity = ((dataPoint && this.model.hasHighlights && (!dataPoint.highlightValue || dataPoint.highlightValue == 0)) ? '0.3' : area.sourceStyle.opacity);
+                                let opacity = (dataPoint && (this.model.hasHighlights || (this.interactivityService.hasSelection() && !dataPoint.selected)) ? 0.3 : area.sourceStyle.opacity);
 
                                 e.style('opacity', opacity);
-
-                                if (dataPoint) {
-    
-                                    let self = this;
-                                    e.on('click', function() {
-                                        if (!self.zooming) {
-                                            self.selectionManager.select(dataPoint.selectionId, (<any>d3.event).ctrlKey)
-                                                .then((ids: ISelectionId[]) => {
-
-                                                d3.selectAll('.' + areaSelector).style('opacity', (ids.length > 0 ? '0.3' : opacity));
-                                                e.style('opacity', opacity);
-                                            });
-
-                                            (<Event>d3.event).stopPropagation();
-                                        }
-                                    });
-                                }
 
                                 let showLabel = this.model.settings.dataLabels.show;
                                 if (isText) showLabel = false;
@@ -1632,8 +1628,13 @@ module powerbi.extensibility.visual {
                                     let areaPadding = 10;
 
                                     let areaRect: SVGRect = (<any>e.node()).getBBox();
-                                    let labelFontFamily = "'wf_standard-font',helvetica,arial,sans-serif";
-                                    let labelFontSize = PixelConverter.fromPoint(this.model.settings.dataLabels.fontSize);
+                                    let labelFontFamily = this.model.settings.dataLabels.fontFamily;
+                                    let labelFontSizePx = PixelConverter.fromPointToPixel(this.model.settings.dataLabels.fontSize);
+
+                                    if (!this.model.settings.dataLabels.zoomEnlarge)
+                                        labelFontSizePx = (labelFontSizePx / map.scale.scale);
+
+                                    let labelFontSize = labelFontSizePx + 'px';
 
                                     let rawLabelValue = area.displayName;
                                     if (dataPoint) {
@@ -1642,11 +1643,12 @@ module powerbi.extensibility.visual {
 
                                         let dataPointFormatter = OKVizUtility.Formatter.getFormatter({
                                             format: dataPoint.format,
-                                            formatSingleValues: (this.model.settings.dataLabels.unit == 0),
-                                            value: this.model.settings.dataLabels.unit,
+                                            formatSingleValues: (this.model.settings.dataLabels.unit === 0),
+                                            value: (this.model.settings.dataLabels.unit == 0 ? this.model.domain.start: this.model.settings.dataLabels.unit),
                                             precision: this.model.settings.dataLabels.precision,
-                                            displayUnitSystemType: 2,
-                                            allowFormatBeautification: false
+                                            displayUnitSystemType: 3,
+                                            allowFormatBeautification: false,
+                                            cultureSelector: this.model.settings.dataLabels.locale
                                         });
 
                                         if (this.model.settings.dataLabels.labelStyle == 'category') {
@@ -1752,7 +1754,7 @@ module powerbi.extensibility.visual {
                 //Tooltips
                 this.tooltipServiceWrapper.addTooltip(this.svgMap.selectAll('.' + areaSelector + ', .' + areaSelector + ' *'), 
                     function(tooltipEvent: TooltipEventArgs<number>){
-                        let dataPoint: VisualDataPoint = tooltipEvent.data;
+                        let dataPoint: VisualDataPoint = <any>tooltipEvent.data;
                         if (dataPoint && dataPoint.tooltips)
                             return dataPoint.tooltips;
                         
@@ -1761,17 +1763,20 @@ module powerbi.extensibility.visual {
                     (tooltipEvent: TooltipEventArgs<number>) => null
                 );
 
-                /*
+                
                 if (this.interactivityService) {
+
+                    this.interactivityService.applySelectionStateToData(this.model.dataPoints);
+
                     let behaviorOptions = {
                         selection: d3.selectAll('.' + areaSelector),
                         clearCatcher: this.svg,
                         hasHighlights: this.model.hasHighlights
                     };
 
-                    this.interactivityService.bind(this.model.legendDataPoints, this.behavior, behaviorOptions);
+                    this.interactivityService.bind(this.model.dataPoints, this.behavior, behaviorOptions);
                 }
-                */
+                
 
                 OKVizUtility.spinner();
 
@@ -1808,7 +1813,16 @@ module powerbi.extensibility.visual {
 
                 //Maps combo
                 let comboBox = '<span><select class="maps"' + (this.gallery.visible ? ' disabled="disabled"' : '') + '>';
-                for (let i = 0; i < this.model.maps.length; i++) {
+
+                //Sort maps
+                let items = {};
+                for (let i = 0; i < this.model.maps.length; i++)
+                    items[this.model.maps[i].displayName] = i;
+                let keys = Object.keys(items);
+                keys.sort();
+ 
+                for (let k = 0; k < keys.length; k++) {
+                    let i = items[keys[k]];
                     comboBox += '<option value="' + i + '"';
                     if (i == this.model.settings.general.imageSelected) comboBox+= ' selected="selected"';
                     comboBox += '>' + this.model.maps[i].displayName + '</option>';
@@ -1927,7 +1941,7 @@ module powerbi.extensibility.visual {
                                         areas: [],
                                         scale: { scale: 1, translation: [0, 0] },
                                         mapMeasure: null,
-                                        selectionIds: null
+                                        identities: null
                                     });
 
                                     if (self.fileCollector.length == files.length) {
@@ -1956,7 +1970,7 @@ module powerbi.extensibility.visual {
                         areas: [],
                         scale: { scale: 1, translation: [0, 0] },
                         mapMeasure: null,
-                        selectionIds: null
+                        identities: null
                     }];
 
                     self.persistMaps(maps, 0);
@@ -2004,7 +2018,7 @@ module powerbi.extensibility.visual {
 
             tb.style({
                 'transform-origin': (this.model.settings.toolbar.keep ? 'center' : 'left top'),
-                'transform': 'scale(' + this.model.settings.toolbar.scale + ')'
+                'transform': 'scale(' + (2-this.viewPort.scale) + ')'
             });
 
             tb.classed('fixed', this.model.settings.toolbar.keep);
@@ -2060,8 +2074,6 @@ module powerbi.extensibility.visual {
                                 self.gallery.folders.push(folder.name)
                             }
                             self.toolbar(true);
-                            
-//TODO https://synoptic.design/wp-json/wp/v2/posts/?per_page=100
 
                             $.getJSON('https://synoptic.design/api/get_posts/?count=-1', function (d) {
                                 if (self.gallery.retreiving) {
@@ -2071,6 +2083,7 @@ module powerbi.extensibility.visual {
                                         for (let i = 0; i < d.posts.length; i++) {
                                             var post = d.posts[i];
                                             if (post.attachments.length > 0) {
+
                                                 let title = post.title_plain;
                                                 let thumb_url = post.attachments[0].url.replace('http:', 'https:');
                                                 let folder = post.custom_fields.gallery_folder[0];
@@ -2078,7 +2091,8 @@ module powerbi.extensibility.visual {
                                                 let author_name = post.custom_fields.gallery_author_name[0];
                                                 let is_verified = post.custom_fields.gallery_verified[0];
                                                 let author = (is_verified ? author_name + ' (' + author_email + ')' : (author_name === '' ? 'Anonymous' : author_name + ' (not verified)'));
-                                                let content = $("<div>").html(post.content).text();
+
+                                                let content = post.content.replace(/<[^>]*>?/gm, '');
                                                 let alt = title + ' \n' + content + ' \nby ' + author;
 
                                                 html += '<li class="galleryFolder_' + folder + '"';
@@ -2184,6 +2198,41 @@ module powerbi.extensibility.visual {
             return returnId;
         }
 
+        public severeAlert(title?: string, message?: string, height?: number, top?: number) {
+
+            d3.selectAll('.OKVizAlert').remove();
+            OKVizUtility.spinner();
+
+            let div = this.element.append('div')
+                .classed('OKVizAlert', true)
+                .style({
+                    'position': 'absolute',
+                    'left': '0',
+                    'top': (top ? top + 'px' : '0'),
+                    'z-index': '99999',
+                    'display': 'table',
+                    'height': (height ? height + 'px' : '100%'),
+                    'width': '100%',
+                    'background': '#f4f4f4'
+                })
+                .append('div')
+                .style({
+                    "display": "table-cell",
+                    "font-family": "'Segoe UI'wf_segoe-ui_normal,helvetica,arial,sans-serif",
+                    "font-size": "14px",
+                    "color": "#212121",
+                    "padding": "10px",
+                    "text-align": "center",
+                    "vertical-align": "middle"
+                });
+
+            div.html('<svg width="31px" height="31px" viewBox="0 0 31 31"><g><path style= "fill:#212121" d="M15.5,0C6.9,0,0,6.9,0,15.5C0,24.1,6.9,31,15.5,31S31,24.1,31,15.5C31,6.9,24.1,0,15.5,0z M15.5,29C8,29,2,23,2,15.5S8,2,15.5,2S29,8,29,15.5S23,29,15.5,29z"/><path style= "fill:#212121" d="M22.1,9.2c-0.4-0.4-1-0.4-1.4,0l-5.2,5.2l-5.2-5.2c-0.4-0.4-1-0.4-1.4,0s-0.4,1,0,1.4l5.2,5.2 l-5.2,5.2c-0.4,0.4-0.4,1,0,1.4c0.2,0.2,0.4,0.3,0.7,0.3c0.3,0,0.5-0.1,0.7-0.3l5.2-5.2l5.2,5.2c0.2,0.2,0.4,0.3,0.7,0.3 s0.5-0.1,0.7-0.3c0.4-0.4,0.4-1,0-1.4l-5.2-5.2l5.2-5.2C22.5,10.2,22.5,9.6,22.1,9.2z"/></g></svg>');
+            div.append('br');
+            div.append('span').text(title.toUpperCase());
+            div.append('br');
+            div.append('span').text(message);
+        }
+
         public static geoJSONFromSVGElement(path) {
             
             let arr = [];
@@ -2237,7 +2286,6 @@ module powerbi.extensibility.visual {
                         objectName: objectName,
                         properties: {
                             "showUnmatched": this.model.settings.general.showUnmatched,
-                            "showDiagnostic": this.model.settings.general.showDiagnostic,
                             "strictValidation": this.model.settings.general.strictValidation
                         },
                         selector: null
@@ -2250,7 +2298,6 @@ module powerbi.extensibility.visual {
                         objectName: objectName,
                         properties: {
                             "keep": this.model.settings.toolbar.keep,
-                            "scale": this.model.settings.toolbar.scale,
                             "zoom": this.model.settings.toolbar.zoom
                         },
                         selector: null
@@ -2324,9 +2371,42 @@ module powerbi.extensibility.visual {
                                             }
                                         }
                                     },
-                                    selector: enumerateDataPoint.selectionId.getSelector()
+                                    selector: enumerateDataPoint.identity.getSelector()
                                 });
                             }
+                        }
+
+                        objectEnumeration.push({
+                            objectName: objectName,
+                            properties: {
+                                "saturate": this.model.settings.dataPoint.saturate
+                            },
+                            selector: null
+                        });
+
+                        if (this.model.settings.dataPoint.saturate) {
+                            objectEnumeration.push({
+                                objectName: objectName,
+                                properties: {
+                                    "saturateMin": this.model.settings.dataPoint.saturateMin,
+                                    "saturateMax": Math.max(this.model.settings.dataPoint.saturateMin + 1, this.model.settings.dataPoint.saturateMax)
+                                },
+                                validValues: {
+                                    "saturateMin": {
+                                        numberRange: {
+                                            min: 0,
+                                            max: 99
+                                        }
+                                    },
+                                    "saturateMax": {
+                                        numberRange: {
+                                            min: 1,
+                                            max: 100
+                                        }
+                                    }
+                                },
+                                selector: null
+                            });
                         }
                     }
 
@@ -2383,37 +2463,17 @@ module powerbi.extensibility.visual {
 
                      for(let i = 0; i < this.model.states.length; i++) {
                         let state = this.model.states[i];
-                        if (state.selectionId) {
+                        if (state.identity) {
                             objectEnumeration.push({
                                 objectName: objectName,
                                 displayName: state.displayName + (state.isTarget ? ' (target)' : ''),
                                 properties: {
                                     "fill": { solid: { color: state.color } }
                                 },
-                                selector: state.selectionId.getSelector()
+                                selector: state.identity.getSelector()
                             });
                         }
                     }
-
-                    objectEnumeration.push({
-                        objectName: objectName,
-                        properties: {
-                            "saturate": this.model.settings.states.saturate
-                        },
-                        selector: null
-                    });
-
-                    if (this.model.settings.states.saturate) {
-                        objectEnumeration.push({
-                            objectName: objectName,
-                            properties: {
-                                "saturateMin": this.model.settings.states.saturateMin,
-                                "saturateMax": this.model.settings.states.saturateMax
-                            },
-                            selector: null
-                        });
-                    }
-
                     break;
 
                  case 'dataLabels':
@@ -2443,12 +2503,33 @@ module powerbi.extensibility.visual {
                             "position": this.model.settings.dataLabels.position,
                             "enclose": this.model.settings.dataLabels.enclose,
                             "wordWrap": this.model.settings.dataLabels.wordWrap,
-                            "fontSize": this.model.settings.dataLabels.fontSize,
                             "unit": this.model.settings.dataLabels.unit,
-                            "precision": this.model.settings.dataLabels.precision
+                            "precision": this.model.settings.dataLabels.precision,
+                            "locale": this.model.settings.dataLabels.locale,
+                            "fontSize": this.model.settings.dataLabels.fontSize,
+                            "fontFamily": this.model.settings.dataLabels.fontFamily
+                        },
+                        validValues: {
+                            "precision": {
+                                numberRange: {
+                                    min: 0,
+                                    max: 15
+                                }
+                            }
                         },
                         selector: null
                     });
+
+                    if (this.model.settings.toolbar.zoom) {
+                        objectEnumeration.push({
+                            objectName: objectName,
+                            properties: {
+                                "zoomEnlarge": this.model.settings.dataLabels.zoomEnlarge
+                            },
+                            selector: null
+                        });
+                    }
+
 
                     break;
 
@@ -2479,6 +2560,16 @@ module powerbi.extensibility.visual {
                         selector: null
                     });
  
+                    break;
+                
+                case 'about':
+                    objectEnumeration.push({
+                        objectName: objectName,
+                        properties: {
+                            "version": this.meta.version + (this.meta.dev ? ' BETA' : '')
+                        },
+                        selector: null
+                    });
                     break;
                 
             };
