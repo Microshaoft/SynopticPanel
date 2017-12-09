@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ContentApp">
+  <Id>A21C9D30-1DE5-11E7-AFFD-EF0A36C68F2C</Id>
+  <Version>1.4.6.0</Version>
+  <ProviderName>OKViz - a trademark of SQLBI</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Synoptic Panel by OKViz"/>
+  <Description DefaultValue="Synoptic Panel by OKViz allows you to present one or more images (called maps, not necessarily geogr"/>
+  <IconUrl DefaultValue="https://visuals.azureedge.net/app-store/PowerBI_icon32x32.png"/>
+  <SupportUrl DefaultValue="http://okviz.com/synoptic-panel/"/>
+  <Requirements>
+    <Sets>
+      <Set Name="DataAnalytics.PowerBI" MinVersion="1.1"/>
+    </Sets>
+  </Requirements>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://visuals.azureedge.net/app-store/synopticPanelByOKViz.1.4.6.0.pbiviz"/>
+    <RequestedWidth>100</RequestedWidth>
+    <RequestedHeight>100</RequestedHeight>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+</OfficeApp>

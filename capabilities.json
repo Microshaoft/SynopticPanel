@@ -456,6 +456,18 @@
                         "text": true
                     }
                 },
+                "fill": {
+                    "displayName": "Color",
+                    "type": { 
+                        "fill": { 
+                            "solid": { 
+                                "color": {
+                                    "nullable": true
+                                }
+                            } 
+                        } 
+                    }
+                },
                 "fontSize": {
                    "displayName": "Text size",
                    "type": {

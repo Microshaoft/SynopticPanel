@@ -186,6 +186,7 @@ module powerbi.extensibility.visual {
             position: string;
             enclose: boolean;
             wordWrap: boolean;
+            fill?: Fill;
             fontFamily: string;
             fontSize: number;
             unit?: number; 
@@ -303,6 +304,7 @@ module powerbi.extensibility.visual {
                     position: getValue<string>(objects, "dataLabels", "position", settings.dataLabels.position),
                     enclose: getValue<boolean>(objects, "dataLabels", "enclose", settings.dataLabels.enclose),
                     wordWrap: getValue<boolean>(objects, "dataLabels", "wordWrap", settings.dataLabels.wordWrap),
+                    fill: getValue<Fill>(objects, "dataLabels", "fill", settings.dataLabels.fill),
                     fontSize: getValue<number>(objects, "dataLabels", "fontSize", settings.dataLabels.fontSize),
                     fontFamily: getValue<string>(objects, "dataLabels", "fontFamily", settings.dataLabels.fontFamily),
                     unit: getValue<number>(objects, "dataLabels", "unit", settings.dataLabels.unit),
@@ -990,7 +992,7 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Synoptic Panel',
-                version: '1.4.6',
+                version: '1.4.7',
                 dev: false
             };
 
@@ -1719,7 +1721,7 @@ module powerbi.extensibility.visual {
                                         .style({
                                             'font-size': labelFontSize,
                                             'font-family': labelFontFamily,
-                                            'fill': OKVizUtility.autoTextColor(color),
+                                            'fill': (this.model.settings.dataLabels.fill ? this.model.settings.dataLabels.fill.solid.color : OKVizUtility.autoTextColor(color)),
                                             'text-anchor': (this.model.settings.dataLabels.position == 'top' ? 'start' : 'middle'),
                                             'pointer-events': 'none'
                                         })
@@ -1787,86 +1789,110 @@ module powerbi.extensibility.visual {
 
         public toolbar(forceRedraw: boolean) {
            
-            let tb = d3.select('.toolbar');
-            if (tb.empty()){
-                tb = this.element.append('div').classed('toolbar', true).style('display', 'none');
+            var self = this; 
+            let $tb = $('.toolbar');
+            if ($tb.length == 0){
+
+                $tb = $('<div>').addClass('toolbar').hide().appendTo(<HTMLElement>this.element[0][0]);
+                //$tb = this.element.append('div').classed('toolbar', true).style('display', 'none');
                 forceRedraw = true;
             }
 
             if (forceRedraw) {
 
-                let buttons = [];
+                var $buttons = $tb.find('.buttons');
+                if ($buttons.length == 0)
+                    $buttons = $('<div>').addClass('buttons').appendTo($tb);
+                else
+                    $buttons.empty();
+                    
+                let hasButton = false;
 
-                let sepButton = '<div class="sep">&nbsp;</div>';
+                //Maps buttons
+                let $mapButton = $('<span>');
+                let $mapButtonInside = $('<button>').addClass('fileChoose mapChoose' + (this.gallery.visible ? ' disabled' : '')).attr('title', 'Choose/Change local maps (SVG files)').text((this.model.maps.length == 0 ? 'Local maps' : (this.model.maps.length == 1 ? 'Change' : ''))).appendTo($mapButton);
+                $mapButtonInside.prepend('<svg width="20px" height="16px" viewBox="0 0 20 16"><g><path style="fill:#FFFFFF" d="M20,16H0V4h20V16z"/></g><g><polygon style="fill:#FFFFFF" points="14,3 0,3 0,0 9.6,0"/></g></svg>');
+                $('<input type="file" class="file" multiple="multiple" accept="image/svg">').appendTo($mapButton);
 
-                //Regular buttons
-                let mapButton = '<span><button class="fileChoose mapChoose' + (this.gallery.visible ? ' disabled' : '') + '" title="Choose/Change local maps (SVG files)"><svg width="20px" height="16px" viewBox="0 0 20 16"><g><path style="fill:#FFFFFF" d="M20,16H0V4h20V16z"/></g><g><polygon style="fill:#FFFFFF" points="14,3 0,3 0,0 9.6,0"/></g></svg>' + (this.model.maps.length == 0 ? 'Local maps' : (this.model.maps.length == 1 ? 'Change' : '')) + '</button><input type="file" class="file" multiple="multiple" accept="image/svg"></span>';
-
-                //Gallery
-                let galleryBox = '<span><select class="galleryFolders">';
-                for (let i = 0; i < this.gallery.folders.length; i++)
-                    galleryBox += '<option value="' + i + '">' + this.gallery.folders[i] + '</option>';
-                galleryBox += '</select></span>';
-
-                let galleryButton = '<span><button class="galleryChoose' + (this.gallery.visible ? ' active' : '') + '" title="Choose a map from the community gallery"><svg width="20px" height="16px" viewBox="0 0 20 16"><g><path  style="fill:#FFFFFF" d="M20,16H0V4h20V16z M1,15h18V5H1V15z M18,14H6.9l1.8-2.2l0.6-1.9l1.7,1.1l3-3.8l4,3.6V14z M4,10c-0.6,0-1-0.2-1.4-0.6C2.2,9,2,8.6,2,8c0-0.6,0.2-1,0.6-1.4c0.8-0.8,2-0.8,2.8,0C5.8,7,6,7.5,6,8c0,0.5-0.2,1-0.6,1.4 C5,9.8,4.6,10,4,10z"/></g><g><rect x="2" y="2" style="fill:#FFFFFF" width="16" height="1"/></g><g><rect x="5"  style="fill:#FFFFFF" width="10" height="1"/></g></svg>Gallery</button></span> ';
-
-
-                //Maps combo
-                let comboBox = '<span><select class="maps"' + (this.gallery.visible ? ' disabled="disabled"' : '') + '>';
-
+                let $mapsBox = $('<span>');
+                let $mapsSelect = $('<select>').addClass('maps').appendTo($mapsBox);
+                $mapsSelect.attr('disabled', (this.gallery.visible ? 'disabled' : null));
+    
                 //Sort maps
                 let items = {};
                 for (let i = 0; i < this.model.maps.length; i++)
                     items[this.model.maps[i].displayName] = i;
                 let keys = Object.keys(items);
                 keys.sort();
- 
-                for (let k = 0; k < keys.length; k++) {
-                    let i = items[keys[k]];
-                    comboBox += '<option value="' + i + '"';
-                    if (i == this.model.settings.general.imageSelected) comboBox+= ' selected="selected"';
-                    comboBox += '>' + this.model.maps[i].displayName + '</option>';
+
+                $.each(keys, function(index, value){
+                    let i = items[value];
+                    var $option = $('<option>').appendTo($mapsSelect);
+                    $option.attr('value', i).text(self.model.maps[i].displayName);
+                    if (i == self.model.settings.general.imageSelected)
+                        $option.attr('selected', 'selected');
+                });
+
+
+                //Gallery
+                let $categoriesBox = $('<span>');
+                let $categoriesSelect = $('<select>').addClass('galleryFolders').appendTo($categoriesBox);
+                $.each(this.gallery.folders, function(index, value){
+                    var $option = $('<option>').appendTo($categoriesSelect);
+                    $option.attr('value', index).text(value);
+                });
+
+                let $galleryButton = $('<span>');
+                let $galleryButtonInside = $('<button>').attr('title', 'Choose a map from the community gallery').addClass('galleryChoose' + (this.gallery.visible ? ' active' : '')).text('Gallery').appendTo($galleryButton);
+                $galleryButtonInside.prepend('<svg width="20px" height="16px" viewBox="0 0 20 16"><g><path  style="fill:#FFFFFF" d="M20,16H0V4h20V16z M1,15h18V5H1V15z M18,14H6.9l1.8-2.2l0.6-1.9l1.7,1.1l3-3.8l4,3.6V14z M4,10c-0.6,0-1-0.2-1.4-0.6C2.2,9,2,8.6,2,8c0-0.6,0.2-1,0.6-1.4c0.8-0.8,2-0.8,2.8,0C5.8,7,6,7.5,6,8c0,0.5-0.2,1-0.6,1.4 C5,9.8,4.6,10,4,10z"/></g><g><rect x="2" y="2" style="fill:#FFFFFF" width="16" height="1"/></g><g><rect x="5"  style="fill:#FFFFFF" width="10" height="1"/></g></svg>');
+
+                //Zoom
+                let $zoomInButton = $('<span>');
+                let $zoomInButtonInside = $('<button>').addClass('zoomIn').attr('title', 'Zoom in').attr('data-zoom', '+1').appendTo($zoomInButton);
+                $zoomInButtonInside.append('<svg width="16px" height="15px" viewBox="0 0 19 18"><g><polygon style="fill:#FFFFFF" points="17,6 11,6 11,0 8,0 8,6 2,6 2,9 8,9 8,15 11,15 11,9 17,9 "/></g></svg>');
+
+                let $zoomOutButton = $('<span>');
+                let $zoomOutButtonInside = $('<button>').addClass('zoomOut').attr('title', 'Zoom out').attr('data-zoom', '-1').appendTo($zoomOutButton);
+                $zoomOutButtonInside.append('<svg width="16px" height="15px" viewBox="0 0 19 18"><g><rect style="fill:#FFFFFF" x="2" y="6" width="15" height="3"/></g></svg>');
+
+                let $resetZoomButton = $('<span>');
+                let $resetZoomButtonInside = $('<button>').addClass('zoom0').attr('title', 'Reset zoom').attr('data-zoom', '0').appendTo($resetZoomButton);
+                $resetZoomButtonInside.append('<svg width="18px" height="18px" viewBox="0 0 20 20"><g transform="translate(0,-952.36218)"><path style="fill:#FFFFFF" d="M4.2,954.6L3,955.7c2.3,2.1,4.7,4.1,7,6.2c2.3-2.1,4.7-4.2,7-6.2l-1.2-1.2l-5.8,5.1L4.2,954.6z M10,963.1 c-2.3,2.1-4.7,4.2-7,6.2l1.2,1.2l5.8-5.1l5.8,5.1l1.2-1.2C14.7,967.3,12.3,965.2,10,963.1L10,963.1z"/></g></svg>');
+
+                if (this.model.maps.length > 1) {
+                    hasButton = true;
+                    $mapsBox.appendTo($buttons);
                 }
-                comboBox += '</select></span>';
-
-                //Zoom elements
-                let zoomInButton = '<span><button class="zoomIn" title="Zoom in" data-zoom="+1"><svg width="16px" height="15px" viewBox="0 0 19 18"><g><polygon style="fill:#FFFFFF" points="17,6 11,6 11,0 8,0 8,6 2,6 2,9 8,9 8,15 11,15 11,9 17,9 "/></g></svg></button></span>';
-
-                let zoomOutButton = '<span><button class="zoomOut" title="Zoom out" data-zoom="-1"><svg width="16px" height="15px" viewBox="0 0 19 18"><g><rect style="fill:#FFFFFF" x="2" y="6" width="15" height="3"/></g></svg></button></span>';
-
-                let resetZoomButton = '<span><button class="zoom0" title="Reset zoom"  data-zoom="0"><svg width="18px" height="18px" viewBox="0 0 20 20"><g transform="translate(0,-952.36218)"><path style="fill:#FFFFFF" d="M4.2,954.6L3,955.7c2.3,2.1,4.7,4.1,7,6.2c2.3-2.1,4.7-4.2,7-6.2l-1.2-1.2l-5.8,5.1L4.2,954.6z M10,963.1 c-2.3,2.1-4.7,4.2-7,6.2l1.2,1.2l5.8-5.1l5.8,5.1l1.2-1.2C14.7,967.3,12.3,965.2,10,963.1L10,963.1z"/></g></svg></button></span>';
-
-                if (this.model.maps.length > 1)
-                      buttons.push(comboBox);
 
                 if (this.editMode) {
                     
                     if (this.model.maps.length <= 1 || (this.model.maps.length > 1 && !this.model.maps[0].mapMeasure)) {
-                        buttons.push(mapButton, sepButton, galleryButton);
+                        hasButton = true;
+                        $mapButton.appendTo($buttons);
+                        $('<div>').addClass('sep').html('&nbsp;').appendTo($buttons);
+                        $galleryButton.appendTo($buttons);
                     }
                     
                 }
 
                 if (this.gallery.visible) {
-                    buttons.push(galleryBox);
+                    hasButton = true;
+                    $categoriesBox.appendTo($buttons);
                 }
 
                 if (this.model.maps.length > 0 && !this.gallery.visible && this.model.settings.toolbar.zoom) {
-                    if (buttons.length > 0)
-                        buttons.push(sepButton);
-                    buttons.push(zoomInButton, zoomOutButton, resetZoomButton);
+
+                    if (hasButton)
+                        $('<div>').addClass('sep').html('&nbsp;').appendTo($buttons);
+                    
+                    $zoomInButton.appendTo($buttons);
+                    $zoomOutButton.appendTo($buttons);
+                    $resetZoomButton.appendTo($buttons);
                 }
                 
-                if (buttons.length == 0) return;
+                if (!hasButton) return;
 
-                let html = '<div class="buttons">';
-                for (let i = 0; i < buttons.length; i++)
-                    html += buttons[i];
-                html += '</div>';
-
-                tb.html(html);
-
-                var self = this; 
+                
                 this.element.on('mouseleave', function(){
                     if (self.model.maps.length > 0 && !self.model.settings.toolbar.keep && !self.gallery.visible) {
                         d3.select('.toolbar').style('display', 'none');
@@ -2013,16 +2039,16 @@ module powerbi.extensibility.visual {
 
 
             if (this.model.maps.length == 0 || this.model.settings.toolbar.keep || this.gallery.visible) {
-                tb.style('display', 'block');
+                $tb.show();
             }
 
-            tb.style({
+            $tb.css({
                 'transform-origin': (this.model.settings.toolbar.keep ? 'center' : 'left top'),
-                'transform': 'scale(' + (2-this.viewPort.scale) + ')'
+                'transform': 'scale(' + (2-this.viewPort.scale) + ')',
+                'margin-top': (this.legend && this.model.settings.legend.show && this.model.settings.legend.position.indexOf('Top') > -1 && this.model.maps.length > 0 ? '25px' : '0')
             });
 
-            tb.classed('fixed', this.model.settings.toolbar.keep);
-            tb.style('margin-top', (this.legend && this.model.settings.legend.show && this.model.settings.legend.position.indexOf('Top') > -1 && this.model.maps.length > 0 ? '25px' : '0'));
+            $tb.toggleClass('fixed', this.model.settings.toolbar.keep);
         }
 
 
@@ -2067,7 +2093,6 @@ module powerbi.extensibility.visual {
                         
                         if (self.gallery.retreiving) {
  
-                            let html = '';
                             
                             for (let i = 0; i < d.folders.length; i++) {
                                 let folder = d.folders[i];
@@ -2078,8 +2103,8 @@ module powerbi.extensibility.visual {
                             $.getJSON('https://synoptic.design/api/get_posts/?count=-1', function (d) {
                                 if (self.gallery.retreiving) {
                                     if (d.status === 'ok') {
+                                        var $ul = $('<ul>');
 
-                                        html += '<ul>';
                                         for (let i = 0; i < d.posts.length; i++) {
                                             var post = d.posts[i];
                                             if (post.attachments.length > 0) {
@@ -2095,9 +2120,21 @@ module powerbi.extensibility.visual {
                                                 let content = post.content.replace(/<[^>]*>?/gm, '');
                                                 let alt = title + ' \n' + content + ' \nby ' + author;
 
-                                                html += '<li class="galleryFolder_' + folder + '"';
-                                                if (folder != 0) html += ' style="display:none"';
-                                                html += '><a href="#" id="s_' + post.id + '" title= "' + alt + '" class="galleryItem"><div class="thumbnail_container"><div class="thumbnail" style= "background:#fff url(' + thumb_url + ') no-repeat center; background-size:contain"></div></div> <div class="ellipsis">' + title + '</div></a></li>';
+                                                var $li = $('<li>').addClass('galleryFolder_' + folder).appendTo($ul);
+                                                if (folder != 0) $li.hide();
+                                                var $a = $('<a>').addClass('galleryItem').appendTo($li);
+                                                $a.attr('id', 's_' + post.id).attr('title', alt);
+                                                var $thumbnailContainer = $('<div>').addClass('thumbnail_container').appendTo($a);
+                                                var $thumbnail = $('<div>').addClass('thumbnail').appendTo($thumbnailContainer);
+                                                $thumbnail.css({
+                                                    'background-color': '#fff',
+                                                    'background-image': 'url(' + thumb_url + ')',
+                                                    'background-position': 'center',
+                                                    'background-repeat': 'no-repeat',
+                                                    'background-size': 'contain'
+                                                });
+                                                var $title = $('<div>').addClass('ellipsis').appendTo($a);
+                                                $title.text(title);
 
                                                 self.gallery.items['s_' + post.id] = {
                                                     url: post.custom_fields.gallery_map[0].replace('http:', 'https:'),
@@ -2106,10 +2143,11 @@ module powerbi.extensibility.visual {
 
                                             }
                                         }
-                                        html += '</ul>';
-                                        element.html(html);
+                             
+                                        element.html('');
+                                        $ul.appendTo(<HTMLElement>element[0][0]);
 
-                                        self.gallery.html = html;
+                                        self.gallery.html = element.html();
                                         
                                     }
                                     self.gallery.retreiving = false;
@@ -2506,6 +2544,7 @@ module powerbi.extensibility.visual {
                             "unit": this.model.settings.dataLabels.unit,
                             "precision": this.model.settings.dataLabels.precision,
                             "locale": this.model.settings.dataLabels.locale,
+                            "fill": this.model.settings.dataLabels.fill,
                             "fontSize": this.model.settings.dataLabels.fontSize,
                             "fontFamily": this.model.settings.dataLabels.fontFamily
                         },
