@@ -992,7 +992,7 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Synoptic Panel',
-                version: '1.4.7',
+                version: '1.4.8',
                 dev: false
             };
 
@@ -1266,7 +1266,7 @@ module powerbi.extensibility.visual {
                 if (this.model.settings.general.strictValidation) {
                     //Parse SVG to automatically fix some errors
                     let svgParser = new DOMParser();
-                    let svgDoc = svgParser.parseFromString(map.data, 'image/svg+xml');
+                    let svgDoc = svgParser.parseFromString(this.safeData(map.data), 'image/svg+xml');
                     let svgElement = svgDoc.documentElement;
                 
                     let parserError = (svgElement.getElementsByTagName("parsererror").length > 0);
@@ -1285,7 +1285,7 @@ module powerbi.extensibility.visual {
                         }
                     }
                 } else {
-                    $temp = $('<div>').append(map.data);
+                    $temp = $('<div>').append(this.safeData(map.data));
                 }
 
                 let $tempsvg = $temp.find('svg');
@@ -1421,6 +1421,17 @@ module powerbi.extensibility.visual {
                 }
 
             }
+        }
+
+        public safeData(data: string) {
+
+            //Test string: data = "<a href=\"javascript:alert('click');void(0)\">click</a><div onmouseover=\"alert('mouseover')\">mouseover</div> <" + "script>alert('script');<" + "/script >";
+
+            data = data.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script.?>/img, '');
+            data = data.replace(/("|'| )on[^=]*=/img, ' blocked=');
+            data = data.replace(/javascript:/img, '');
+
+            return data;
         }
 
         public renderSVG(map: VisualMap) {
@@ -1800,6 +1811,10 @@ module powerbi.extensibility.visual {
 
             if (forceRedraw) {
 
+                //Safari block loading local maps on Power BI service, so we disabled the feature :(
+                let isSafari = (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1 &&  navigator.userAgent.indexOf('Android') == -1);
+                let allowLocalFiles = (!isSafari);
+
                 var $buttons = $tb.find('.buttons');
                 if ($buttons.length == 0)
                     $buttons = $('<div>').addClass('buttons').appendTo($tb);
@@ -1868,8 +1883,10 @@ module powerbi.extensibility.visual {
                     
                     if (this.model.maps.length <= 1 || (this.model.maps.length > 1 && !this.model.maps[0].mapMeasure)) {
                         hasButton = true;
-                        $mapButton.appendTo($buttons);
-                        $('<div>').addClass('sep').html('&nbsp;').appendTo($buttons);
+                        if (allowLocalFiles) {
+                            $mapButton.appendTo($buttons);
+                            $('<div>').addClass('sep').html('&nbsp;').appendTo($buttons);
+                        }
                         $galleryButton.appendTo($buttons);
                     }
                     
