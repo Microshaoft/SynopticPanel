@@ -18,6 +18,6 @@ To submit an issue, please visit [CONTRIBUTING](/CONTRIBUTING.md)
 
 ## Copyrights
 
-Copyright (c) 2016-2017 OKViz - trademark of SQLBI Corp.
+Copyright (c) 2016-2018 OKViz - trademark of SQLBI Corp.
 
 See the [LICENSE](/LICENSE) file for license rights and limitations (MIT).
