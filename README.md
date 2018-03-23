@@ -4,10 +4,17 @@ Synoptic Panel by OKViz allows you to present one or more images (called maps, n
 
 ![alt tag](screenshot.png)
 
-Find out more on http://okviz.com/synoptic-panel/
+Find out more on https://okviz.com/synoptic-panel/
 
+## Changelog
 
-### Copyrights
+A full changelog is available here: [CHANGELOG](/CHANGELOG).
+
+## Submit an issue
+
+To submit an issue please visit [CONTRIBUTING](/CONTRIBUTING).
+
+## Copyrights
 
 Copyright (c) 2016-2017 OKViz - trademark of SQLBI Corp.
 

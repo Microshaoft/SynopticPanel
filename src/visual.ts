@@ -28,6 +28,8 @@ import tooltip = powerbi.extensibility.utils.tooltip;
 import TooltipEnabledDataPoint = powerbi.extensibility.utils.tooltip.TooltipEnabledDataPoint;
 import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
 
+declare function polylabel(polygon: number[][][], precision?: number, debug?: boolean): number[];
+
 module powerbi.extensibility.visual {
     
     interface VisualMeta {
@@ -270,7 +272,7 @@ module powerbi.extensibility.visual {
         let hasDataViews = (dataViews && dataViews[0]);
         let hasCategoricalData = (hasDataViews && dataViews[0].categorical && dataViews[0].categorical.values);
         let hasSettings = (hasDataViews && dataViews[0].metadata && dataViews[0].metadata.objects);
-
+console.log(dataViews);
         //Get Settings
         let settings: VisualSettings = defaultSettings();
         if (hasSettings) {
@@ -972,7 +974,6 @@ module powerbi.extensibility.visual {
         private behavior: VisualBehavior;
         private legend: ILegend;
         private model: VisualViewModel;
-        private licced: boolean;
         private element: d3.Selection<HTMLElement>;
         private container: d3.Selection<HTMLElement>;
         private containerSize: SVGRect;
@@ -992,7 +993,7 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Synoptic Panel',
-                version: '1.4.8',
+                version: '1.4.9',
                 dev: false
             };
 
@@ -1136,24 +1137,6 @@ module powerbi.extensibility.visual {
                     .append('div')
                     .classed('body', true)
                     .text('Design your maps with https://synoptic.design');
-            }
-    
-            OKVizUtility.t([this.meta.name, this.meta.version], this.element, options, this.host, {
-                'cd1': this.model.settings.colorBlind.vision, 
-                'cd2': (this.model.settings.states.show ?  this.model.states.length : 0), 
-                'cd3': this.model.settings.states.comparison, 
-                'cd4': this.model.settings.dataPoint.saturate, 
-                'cd5': this.model.hasStates, 
-                'cd6': this.model.settings.legend.show,
-                'cd7': this.model.maps.length, 
-                'cd8': (this.model.maps.length > 0 ? (!this.model.maps[0].mapMeasure ? false : true) : false),
-                'cd9': this.model.settings.dataLabels.position,
-                'cd15': this.meta.dev
-            }); 
-
-            if (!this.licced) {
-                this.licced = true;
-                OKVizUtility.lic_log(this.meta, options, this.host);
             }
 
            //Color Blind module
@@ -1428,7 +1411,12 @@ module powerbi.extensibility.visual {
             //Test string: data = "<a href=\"javascript:alert('click');void(0)\">click</a><div onmouseover=\"alert('mouseover')\">mouseover</div> <" + "script>alert('script');<" + "/script >";
 
             data = data.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script.?>/img, '');
-            data = data.replace(/("|'| )on[^=]*=/img, ' blocked=');
+    
+            data = data.replace(/([^=])("|'| )on[^=]*=/img, 
+                function(match, p1, p2, offset, string) {
+                    return p1 + ' blocked=';
+                }
+            );
             data = data.replace(/javascript:/img, '');
 
             return data;
@@ -1577,12 +1565,13 @@ module powerbi.extensibility.visual {
 
                                         } else {
                                             
-                                            let startSaturation = (this.model.settings.dataPoint.saturateMin ? (this.model.settings.dataPoint.saturateMin / 100) * this.model.domain.start : this.model.domain.start);
+                                            let startSaturation = (this.model.settings.dataPoint.saturateMin ? (this.model.settings.dataPoint.saturateMin / 100) : 0);
 
-                                            let endSaturation = (this.model.settings.dataPoint.saturateMax ? (this.model.settings.dataPoint.saturateMax / 100) * this.model.domain.end : this.model.domain.end);
+                                            let endSaturation = (this.model.settings.dataPoint.saturateMax ? (this.model.settings.dataPoint.saturateMax / 100) : 1);
 
-                                            saturation = Math.min(1, Math.max(0, ((stateValue - startSaturation) / (endSaturation - startSaturation))));
+                                            saturation = Math.min(1, Math.max(0, ((stateValue - this.model.domain.start) / (this.model.domain.end - this.model.domain.start))));
 
+                                            saturation = Math.min(endSaturation, startSaturation + (saturation / (endSaturation - startSaturation)));
 
                                         } 
 
@@ -1628,7 +1617,7 @@ module powerbi.extensibility.visual {
 
                                 }
 
-                                let opacity = (dataPoint && (this.model.hasHighlights || (this.interactivityService.hasSelection() && !dataPoint.selected)) ? 0.3 : area.sourceStyle.opacity);
+                                let opacity = (dataPoint && ((this.model.hasHighlights && !dataPoint.highlightValue) || (this.interactivityService.hasSelection() && !dataPoint.selected)) ? 0.3 : area.sourceStyle.opacity);
 
                                 e.style('opacity', opacity);
 
@@ -1701,7 +1690,8 @@ module powerbi.extensibility.visual {
                                             if (points.length == 0) {
                                                 centroid = true;
                                             } else {
-
+                                                //TODO
+                                            
                                                 let r = <any>polylabel([points], 1);
                                                 labelPos = [r.x, r.y];
 
@@ -2061,7 +2051,7 @@ module powerbi.extensibility.visual {
 
             $tb.css({
                 'transform-origin': (this.model.settings.toolbar.keep ? 'center' : 'left top'),
-                'transform': 'scale(' + (2-this.viewPort.scale) + ')',
+                'transform': 'scale(' + (1 / this.viewPort.scale) + ')',
                 'margin-top': (this.legend && this.model.settings.legend.show && this.model.settings.legend.position.indexOf('Top') > -1 && this.model.maps.length > 0 ? '25px' : '0')
             });
 
