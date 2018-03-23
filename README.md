@@ -8,12 +8,12 @@ Find out more on https://okviz.com/synoptic-panel/
 
 ## Changelog
 
-A full changelog is available here: [CHANGELOG](/CHANGELOG.md).
+A full changelog is available here: [CHANGELOG](/CHANGELOG.md)
 
 
 ## Submit an issue
 
-To submit an issue, please visit [CONTRIBUTING](/CONTRIBUTING.md).
+To submit an issue, please visit [CONTRIBUTING](/CONTRIBUTING.md)
 
 
 ## Copyrights
