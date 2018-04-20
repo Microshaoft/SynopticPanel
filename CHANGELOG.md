@@ -1,7 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## v1.5.0 (2018-04-19)
+### Fixed
+- Map disappearing in some cases
+- DateTime on labels and tooltips
 
 ## v1.4.9 (2018-03-23)
 #### API v1.11.0 - compatible with Power BI March 2018

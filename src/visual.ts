@@ -74,6 +74,7 @@ module powerbi.extensibility.visual {
         target?: number;
         color?: string;
         format?: string;
+        isDate?:boolean;
         tooltips?: VisualTooltipDataItem[];
 
         highlight?:boolean;
@@ -272,7 +273,7 @@ module powerbi.extensibility.visual {
         let hasDataViews = (dataViews && dataViews[0]);
         let hasCategoricalData = (hasDataViews && dataViews[0].categorical && dataViews[0].categorical.values);
         let hasSettings = (hasDataViews && dataViews[0].metadata && dataViews[0].metadata.objects);
-console.log(dataViews);
+
         //Get Settings
         let settings: VisualSettings = defaultSettings();
         if (hasSettings) {
@@ -555,6 +556,7 @@ console.log(dataViews);
                                     hasHighlights = true;
                                 }
                                 dataPoint.format = dataValue.source.format;
+                                dataPoint.isDate = dataValue.source.type.dateTime;
                               
                                 if (dataValue.source.format && dataValue.source.format.indexOf('%') > -1)
                                     arePercentages = true;
@@ -707,7 +709,7 @@ console.log(dataViews);
 
                                 let formattedValue = OKVizUtility.Formatter.format((hasHighlights ? highlightValue : value), {
                                     format: dataValue.source.format,
-                                    value: settings.dataLabels.unit,
+                                    value: (dataValue.source.type.dateTime ? undefined : settings.dataLabels.unit),
                                     precision: settings.dataLabels.precision,
                                     formatSingleValues: false,
                                     displayUnitSystemType: 1,
@@ -993,7 +995,7 @@ console.log(dataViews);
 
             this.meta = {
                 name: 'Synoptic Panel',
-                version: '1.4.9',
+                version: '1.5.0',
                 dev: false
             };
 
@@ -1408,16 +1410,14 @@ console.log(dataViews);
 
         public safeData(data: string) {
 
-            //Test string: data = "<a href=\"javascript:alert('click');void(0)\">click</a><div onmouseover=\"alert('mouseover')\">mouseover</div> <" + "script>alert('script');<" + "/script >";
+            //Remove scripts
+            data = data.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script.?>/img, '<!--Blocked-->');
 
-            data = data.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script.?>/img, '');
-    
-            data = data.replace(/([^=])("|'| )on[^=]*=/img, 
-                function(match, p1, p2, offset, string) {
-                    return p1 + ' blocked=';
-                }
-            );
-            data = data.replace(/javascript:/img, '');
+            //Remove event handlers
+            data = data.replace(/(oncached|onerror|onabort|onload|onbeforeunload|onunload|ononline|onoffline|onfocus|onblur|onopen|onmessage|onclose|onpagehide|onpageshow|onpopstate|onanimationstart|onanimationend|onanimationiteration|ontransitionstart|ontransitioncancel|ontransitionend|ontransitionrun|onreset|onsubmit|onbeforeprint|onafterprint|oncompositionstart|oncompositionupdate|oncompositionend|onfullscreenchange|onfullscreenerror|onresize|onscroll|oncut|oncopy|onpaste|onkeydown|onkeyup|onkeypress|mouseenter|onmouseover|onmousemove|onmousedown|onmouseup|onauxclick|onclick|ondblclick|oncontextmenu|onwheel|onmouseleave|onmouseout|onselect|onpointerlockchange|onpointerlockerror|ondragstart|ondrag|ondragend|ondragover|ondragleave|ondrop|ondurationchange|onloadedmetadata|onloadeddata|oncanplay|oncanplaythrough|onended|onemptied|onstalled|onsuspend|onplay|onplaying|onpause|onwaiting|onseeking|onseeked|onratechange|ontimeupdate|onvolumechange|oncomplete|onaudioprocess|onloadstart|onprogress|ontimeout|onloadend|onpopuphidden|onpopuphiding|onpopupshowing|onpopupshown|onchargingchange|onchargingtimechange|ondischargingtimechange|onlevelchange|onalerting|onbusy|oncallschanged|oncfstatechange|onconnected|onconnecting|ondialing|ondisconnected|ondisconnecting|onheld|onholding|onincoming|onresuming|onstatechange|onvoicechange|oncompassneedscalibration|ondevicelight|ondevicemotion|ondeviceorientation|ondeviceproximity|onMozOrientation|onorientationchange|onuserproximity|ontouchcancel|ontouchend|ontouchenter|ontouchleave|ontouchmove|ontouchstart|onpointerover|onpointerenter|onpointerdown|onpointermove|onpointerup|onpointercancel|onpointerout|onpointerleave|ongotpointercapture|onlostpointcapture)\s*?=/img, 'blocked=');
+
+            //Remove javascript urls
+            data = data.replace(/javascript:/img, 'blocked:');
 
             return data;
         }
@@ -1646,10 +1646,10 @@ console.log(dataViews);
                                         let dataPointFormatter = OKVizUtility.Formatter.getFormatter({
                                             format: dataPoint.format,
                                             formatSingleValues: (this.model.settings.dataLabels.unit === 0),
-                                            value: (this.model.settings.dataLabels.unit == 0 ? this.model.domain.start: this.model.settings.dataLabels.unit),
+                                            value: (dataPoint.isDate ? undefined : (this.model.settings.dataLabels.unit == 0 ? this.model.domain.start: this.model.settings.dataLabels.unit)),
                                             precision: this.model.settings.dataLabels.precision,
                                             displayUnitSystemType: 3,
-                                            allowFormatBeautification: false,
+                                            allowFormatBeautification: false,                
                                             cultureSelector: this.model.settings.dataLabels.locale
                                         });
 

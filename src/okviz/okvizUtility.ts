@@ -44,8 +44,8 @@ module powerbi.extensibility.visual {
             }
 
             public static format(value, properties) {
-                
                 let formatter: any = Formatter.getFormatter(properties);
+
                 if (formatter)
                     return formatter.format(value);
 
