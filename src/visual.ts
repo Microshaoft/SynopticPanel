@@ -1618,7 +1618,10 @@ module powerbi.extensibility.visual {
                                 }
 
                                 let opacity = (dataPoint && ((this.model.hasHighlights && !dataPoint.highlightValue) || (this.interactivityService.hasSelection() && !dataPoint.selected)) ? 0.3 : area.sourceStyle.opacity);
+if (opacity == area.sourceStyle.opacity) {
 
+console.log(dataPoint);
+}
                                 e.style('opacity', opacity);
 
                                 let showLabel = this.model.settings.dataLabels.show;

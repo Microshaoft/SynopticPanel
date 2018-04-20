@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## v1.5.0 (2018-04-19)
+### Added
+- Support to Bookmarks
 ### Fixed
 - Map disappearing in some cases
 - DateTime on labels and tooltips
