@@ -1029,6 +1029,30 @@ module powerbi.extensibility.visual {
     
                 this.model = visualTransform(options, this.host, this.model);
 
+                //Change visible map if there no selected datapoints on the selected map
+                if (this.interactivityService.hasSelection()) {
+                    let mapFound = false;
+                    let selectedIdentities = (<any>this.interactivityService).selectedIds;
+                    for (let i = 0; i < this.model.maps.length; i++) {
+                        let mapIdentities = this.model.maps[i].identities;
+                        for(let ii = 0; ii < selectedIdentities.length; ii++) {
+                            for(let iii = 0; iii < mapIdentities.length; iii++) {
+                                if (selectedIdentities[ii].key == mapIdentities[iii].key) {
+                                    if (this.model.settings.general.imageSelected != i) {
+                                        this.model.settings.general.imageSelected = i;
+                                        this.model.postUpdateActions.resetCanvas = true;
+                                        d3.select('.maps').property('value', i);
+                                    }
+                                    mapFound = true;
+                                    break;
+                                }
+                            }
+                            if (mapFound) break;
+                        }
+                        if (mapFound) break;
+                    }
+                }
+
                 if (this.model.postUpdateActions.resetCanvas) {
 
                     this.zooming = false;
@@ -1617,11 +1641,8 @@ module powerbi.extensibility.visual {
 
                                 }
 
-                                let opacity = (dataPoint && ((this.model.hasHighlights && !dataPoint.highlightValue) || (this.interactivityService.hasSelection() && !dataPoint.selected)) ? 0.3 : area.sourceStyle.opacity);
-if (opacity == area.sourceStyle.opacity) {
+                                let opacity = ((this.model.hasHighlights && dataPoint && !dataPoint.highlightValue) || (this.interactivityService.hasSelection() && (!dataPoint || !dataPoint.selected)) ? 0.3 : area.sourceStyle.opacity);
 
-console.log(dataPoint);
-}
                                 e.style('opacity', opacity);
 
                                 let showLabel = this.model.settings.dataLabels.show;
